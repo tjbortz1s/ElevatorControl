@@ -76,39 +76,3 @@ int main(char argc, char** argv) {
 		}
 	}
 }
-
-void queue_man(int next_floor){
-
-	if((count(node) != 0) && (next_floor != cur_floor)){
-		if(cur_floor == 1) {
-				if(next_floor == next_floor){
-					push(&node,2);
-				}
-				if((next_floor == 3) && (nex_floor != 2))  {
-					push(&node, next_floor);
-				}
-
-
-		}
-		if(cur_floor == 2 ) {
-			push(&node,next_floor);
-		}
-		if(cur_floor == 3) {
-				if(next_floor == 2){
-					push(&node,next_floor);
-				}
-				if((next_floor == 1) && (nex_floor != 2))  {
-					push(&node, next_floor);
-				}
-		}
-
-	}
-	else{
-		if(cur_floor != 1){
-			append(&node,1);
-		}
-		else {
-			sleep(2);
-		}
-	}
-}

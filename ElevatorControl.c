@@ -17,7 +17,6 @@
 
 #define FIRE_CODE 1
 
-//#define FLOOR_QUEUE_SIZE 3
 #define INITIAL_QUEUE_SIZE 3
 #define QUEUE_EMPTY_FLAG -1
 
@@ -37,7 +36,6 @@ struct ElevatorData {
   //then will dynamically resize
   //as it is needed to while elements are removed
 
-  //int floorQueue[FLOOR_QUEUE_SIZE];
   int queueSize;
   int *floorQueue;
 
@@ -253,44 +251,51 @@ void reachFloorFunction(struct ElevatorData *ed, pthread_mutex_t *mutex){
 }
 
 void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requestNumber){
-  //if this is the case
-  //then the number is a multi-digit emergency code
-  //which will contain an amount of data
+  pthread_mutex_lock(mutex);
+	if((getQueueSize(ed) != 0) && (ed->nextFloor != ed->currentFloor)){
+		if(ed->currentFloor == 1) {
+        //this may be an issue
+				if(ed->nextFloor == ed->nextFloor){
+					//push(&node,2);
+          enqueueFloorToFront(ed, requestNumber);
+				}
+				if((ed->nextFloor == 3) && (ed->nextFloor != 2))  {
+					//push(&node, next_floor);
+          enqueueFloorToFront(ed, requestNumber);
+        }
 
-  //if the reqeust number is more than two digits
-  if(requestNumber > 99){
-    //the last two of three digits
-    int emergencyFloor = requestNumber % 100;
-    //the first digit
-    int emergencyCode = requestNumber / 100;
 
-    //in event of fire
-    if(emergencyCode == FIRE_CODE){
-      //do fire things
+		}
+		if(ed->currentFloor == 2 ) {
+			//push(&node,next_floor);
+      enqueueFloorToFront(ed, requestNumber);
     }
-  }
-  switch(requestNumber){
-    case FLOOR_ONE_REQUEST: //internal floor 1
-      break;
-    case FLOOR_TWO_REQUEST: //internal floor 2
-      break;
-    case FLOOR_THREE_REQUEST: //internal floor 3
-      break;
-    case FLOOR_ONE_UP_REQUEST: //external floor 1 up request
-      break;
-    case FLOOR_TWO_DOWN_REQUEST: //external floor 2 down request
-      break;
-    case FLOOR_TWO_UP_REQUEST: //external floor 2 up request
-      break;
-    case FLOOR_THREE_DOWN_REQUEST: //external floor 3 down request
-      break;
-  }
+		if(ed->currentFloor == 3) {
+				if(ed->nextFloor == 2){
+          enqueueFloorToFront(ed, requestNumber);
+					//push(&node,next_floor);
+				}
+				if((ed->nextFloor == 1) && (ed->nextFloor != 2))  {
+					//push(&node, next_floor);
+          enqueueFloorToFront(ed, requestNumber);
+				}
+		}
+
+	}
+	else{
+		if(ed->currentFloor != 1){
+			enqueueFloor(ed, 1);
+		}
+		else {
+			sleep(2);
+		}
+	}
+  pthread_mutex_unlock(mutex);
 }
 
 
-//this is wrong
-//it should put the number on the BACK of the queue
-//it should NOT put it on the front
+//this is fixed, and puts things on the back
+//not the front
 int enqueueFloor(struct ElevatorData *ed, int floor){
   int success = QUEUE_SUCCESS;
   //if the queue is full, expand it
@@ -316,6 +321,7 @@ int enqueueFloor(struct ElevatorData *ed, int floor){
   }
 }
 
+//returns the number of values in the queue
 int getQueueSize(struct ElevatorData *ed){
   //runs through the queue until it hits a -1 value
   //then returns the count
