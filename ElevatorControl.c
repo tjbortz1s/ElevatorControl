@@ -1,6 +1,7 @@
 #include <pthread.h>
 #include <time.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define QUEUE_ERROR -274
 #define QUEUE_SUCCESS -273
@@ -16,7 +17,8 @@
 
 #define FIRE_CODE 1
 
-#define FLOOR_QUEUE_SIZE 3
+//#define FLOOR_QUEUE_SIZE 3
+#define INITIAL_QUEUE_SIZE 3
 #define QUEUE_EMPTY_FLAG -1
 
 #define INITIAL_DOOR_WAIT_TIME 10
@@ -30,7 +32,16 @@ struct ElevatorData {
   int internalRequests[NUMBER_OF_FLOORS];
   //array, treated as a queue, that will
   //hold the next floor to go to.
-  int floorQueue[FLOOR_QUEUE_SIZE];
+  //the floor queue is going to start
+  //as an array of INITIAL_QUEUE_SIZE
+  //then will dynamically resize
+  //as it is needed to while elements are removed
+
+  //int floorQueue[FLOOR_QUEUE_SIZE];
+  int queueSize;
+  int *floorQueue;
+
+  //no longer queue-related stuff
   int reachedFloorFlag;
   //later on
   //make so that all threads
@@ -59,6 +70,8 @@ void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requ
 int enqueueFloor(struct ElevatorData *ed, int floor);
 int enqueueFloorToFront(struct ElevatorData *ed, int floor);
 int dequeueFloor(struct ElevatorData *ed);
+int getQueueSize(struct ElevatorData *ed);
+int increaseQueueSize(struct ElevatorData *ed);
 
 void openDoor(struct ElevatorData *ed);
 void closeDoor(struct ElevatorData *ed);
@@ -90,6 +103,7 @@ int main(){
     printf("ErrorFound4\n");
   }
 
+  printf("%d\n", getQueueSize(&x));
   i = 0;
   i = dequeueFloor(&x);
   if(i == QUEUE_ERROR){
@@ -145,9 +159,13 @@ void initializeData(struct ElevatorData *ed){
     ed->internalRequests[i] = 0;
   }
   //initialize the floorQueue array
-  for(i = 0; i < FLOOR_QUEUE_SIZE; i++){
+  //initialize the size of the queue
+  ed->queueSize = INITIAL_QUEUE_SIZE;
+  ed->floorQueue = (int*) malloc(sizeof(int) * ed->queueSize);
+  for(i = 0; i < ed->queueSize; i++){
     ed->floorQueue[i] = QUEUE_EMPTY_FLAG;
   }
+
   ed->reachedFloorFlag = 0;
   ed->stopProgramFlag = 0;
   ed->doorFlag = 0;
@@ -156,8 +174,8 @@ void initializeData(struct ElevatorData *ed){
   ed->initialDoorWaitOverFlag = 0;
   ed->currentFloor = 0;
   ed->nextFloor = 0;
-
 }
+
 
 //the function that initially opens the door
 //should set the door open flag to 1
@@ -274,23 +292,44 @@ void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requ
 //it should put the number on the BACK of the queue
 //it should NOT put it on the front
 int enqueueFloor(struct ElevatorData *ed, int floor){
-  if(ed->floorQueue[FLOOR_QUEUE_SIZE - 1] == QUEUE_EMPTY_FLAG){
+  int success = QUEUE_SUCCESS;
+  //if the queue is full, expand it
+  if(!(ed->floorQueue[ed->queueSize - 1] == QUEUE_EMPTY_FLAG)){
+    success = increaseQueueSize(ed);
+  }
+  if(success == QUEUE_SUCCESS){ //if expansion was successful
     //add the value to the back
     int firstEmpty = 0;
     int i;
-    for(i = 0; i < FLOOR_QUEUE_SIZE; i++){
+    for(i = 0; i < ed->queueSize; i++){
       if(ed->floorQueue[i] == QUEUE_EMPTY_FLAG){
         firstEmpty = i;
-        i = FLOOR_QUEUE_SIZE;
+        i = ed->queueSize;
         break;
       }
     }
     ed->floorQueue[firstEmpty] = floor;
     return QUEUE_SUCCESS;
   }
-  else{
+  else{ //if expansion failed
     return QUEUE_ERROR;
   }
+}
+
+int getQueueSize(struct ElevatorData *ed){
+  //runs through the queue until it hits a -1 value
+  //then returns the count
+  int i;
+  int size = -1;
+  for(i = 0; i < ed->queueSize; i++){
+    if(ed->floorQueue[i] == QUEUE_EMPTY_FLAG){
+      size = i - 1;
+    }
+  }
+  if(size == -1){
+    return i;
+  }
+  return size;
 }
 
 int enqueueFloorToFront(struct ElevatorData *ed, int floor){
@@ -299,22 +338,31 @@ int enqueueFloorToFront(struct ElevatorData *ed, int floor){
   //if no -1 spaces exist, return error code
   int i = 0;
   int hasEmpty = 0;
-  for(i = 0; i < FLOOR_QUEUE_SIZE; i++){
+  for(i = 0; i < ed->queueSize; i++){
     if(ed->floorQueue[i] == QUEUE_EMPTY_FLAG){
       hasEmpty = 1;
     }
   }
-  if(hasEmpty){
+  //if there is no empty position
+  //increase the size of the queue
+  if(hasEmpty == 0){
+    int hasEmpty = increaseQueueSize(ed);
+  }
+  else{
+    hasEmpty = QUEUE_SUCCESS;
+  }
+  //if it was successfully expanded
+  if(hasEmpty == QUEUE_SUCCESS){
     //move all values forward by 1
     int i;
-    for(i = FLOOR_QUEUE_SIZE - 1; i > 0; i--){
+    for(i = ed->queueSize - 1; i > 0; i--){
       ed->floorQueue[i] = ed->floorQueue[i - 1];
     }
     //set the 0th space to be the given value
     ed->floorQueue[0] = floor;
     return QUEUE_SUCCESS;
   }
-  else{
+  else{ //if expansion of queue failed
     return QUEUE_ERROR;
   }
 }
@@ -331,12 +379,42 @@ int dequeueFloor(struct ElevatorData *ed){
     int returnval = ed->floorQueue[0];
     int i;
 
-    for(i = 0; i < FLOOR_QUEUE_SIZE - 1; i++){
+    for(i = 0; i < ed->queueSize - 1; i++){
       ed->floorQueue[i] = ed->floorQueue[i + 1];
     }
     //set the last value to -1
-    ed->floorQueue[FLOOR_QUEUE_SIZE - 1] = QUEUE_EMPTY_FLAG;
+    ed->floorQueue[ed->queueSize - 1] = QUEUE_EMPTY_FLAG;
     //print the full QUEUE
     return returnval;
   }
+}
+
+
+int increaseQueueSize(struct ElevatorData *ed){
+  //create and initialize the storage array
+  int oldSize = ed->queueSize;
+  int storeArray[oldSize];
+  int i;
+  for(i = 0; i < oldSize; i++){
+    storeArray[i] = ed->floorQueue[i];
+  }
+  //delete the old array
+  free(ed->floorQueue);
+  //create the new array
+  //make it have twice the size of the old one
+  ed->queueSize = (ed->queueSize * 2);
+  ed->floorQueue = malloc(sizeof(int[ed->queueSize]));
+  //if the new array wasn't initialized return the error value
+  if(ed->floorQueue == NULL){
+    return QUEUE_ERROR;
+  }
+  //initialize the new array to have the same values as the old one
+  for(i = 0; i < oldSize; i++){
+    ed->floorQueue[i] = storeArray[i];
+  }
+  //set the rest of the values to the empty flag
+  for(;i < ed->queueSize; i++){
+    ed->floorQueue[i] = QUEUE_EMPTY_FLAG;
+  }
+  return QUEUE_SUCCESS;
 }
