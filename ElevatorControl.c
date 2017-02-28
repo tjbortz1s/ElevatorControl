@@ -6,10 +6,12 @@
 #define QUEUE_ERROR -274
 #define QUEUE_SUCCESS -273
 
+//inside buttons
 #define FLOOR_ONE_REQUEST 0
 #define FLOOR_TWO_REQUEST 1
 #define FLOOR_THREE_REQUEST 2
 
+//outside buttons
 #define FLOOR_ONE_UP_REQUEST 3
 #define FLOOR_TWO_DOWN_REQUEST 4
 #define FLOOR_TWO_UP_REQUEST 5
@@ -27,8 +29,9 @@
 
 //structures
 struct ElevatorData {
-  int floorRequests[2 + ((NUMBER_OF_FLOORS - 2) * 2)];
-  int internalRequests[NUMBER_OF_FLOORS];
+  //used by lights data
+  int externalFloorRequests[2 + ((NUMBER_OF_FLOORS - 2) * 2)];
+  int internalFloorRequests[NUMBER_OF_FLOORS];
   //array, treated as a queue, that will
   //hold the next floor to go to.
   //the floor queue is going to start
@@ -59,7 +62,7 @@ void irTimeoutFunction(struct ElevatorData *ed, pthread_mutex_t *mutex);
 void irInterruptFunction(struct ElevatorData *ed, pthread_mutex_t *mutex);
 void reachFloorFunction(struct ElevatorData *ed, pthread_mutex_t *mutex);
 void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requestNumber);
-
+void floorLightsManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requestNumber);
 
 //these functions are expected to be called by functions that
 //lock the mutex before they call them
@@ -76,68 +79,47 @@ void closeDoor(struct ElevatorData *ed);
 
 
 int main(){
+	//we cannot pause the main thread
+  //however, we will set a flag in the shared data class
+  //and that flag should cause the main thread to stop trying to move
+
+  //the main function should check this value (reachedfloorFlag)
+  //and if it is not 0, it should immidiately set it back
+  //and then it will know a floor was reached
+
   struct ElevatorData x;
   initializeData(&x);
   pthread_mutex_t mutex;
   pthread_mutex_init(&mutex, NULL);
-  //program code where the mutex is passed as a reference/pointer
-  //bla bla bla
-  //program ends here
-  int i;
-  i = enqueueFloor(&x, 1);
-  if(i == QUEUE_ERROR){
-    printf("ErrorFound1\n");
-  }
-  i = enqueueFloor(&x, 2);
-  if(i == QUEUE_ERROR){
-    printf("ErrorFound2\n");
-  }
-  i = enqueueFloorToFront(&x, 3);
-  if(i == QUEUE_ERROR){
-    printf("ErrorFound3\n");
-  }
-  i = enqueueFloor(&x, 4);
-  if(i == QUEUE_ERROR){
-    printf("ErrorFound4\n");
-  }
 
-  printf("%d\n", getQueueSize(&x));
-  i = 0;
-  i = dequeueFloor(&x);
-  if(i == QUEUE_ERROR){
-    printf("ErrorFoundIndque\n");
-  }
-  else{
-    printf("%s%d\n", "NoErrorFoundNumberis ", i);
-  }
+  //create the threads here
 
-  i = 0;
-  i = dequeueFloor(&x);
-  if(i == QUEUE_ERROR){
-    printf("ErrorFoundIn dque\n");
-  }
-  else{
-    printf("%s%d\n", "NoErrorFoundNumberis ", i);
-  }
+  //start the main loop
+  while(true){
+	  pthread_mutex_lock(&mutex);
+	  if(x.reachedFloorFlag == 1){
+		  //if going up, add 1 to the current floor
+		  //if going down subtract 1 from the currentfloor
 
-  i = 0;
-  i = dequeueFloor(&x);
-  if(i == QUEUE_ERROR){
-    printf("ErrorFoundIn dque\n");
+		  //if we just got to the floor we want
+		  //go into a loop opening and closing the door
+		  //set flag back to 0 after
+		  if(x.nextFloor == x.currentFloor) {
+			// open doors, remove nextfloor from queue, close doors
+			//this routine will manage all the open door and close
+			//door flags and so on
+			openDoorRoutine(&x);
+			//turn off lights for the floor
+		  }
+	  }
+	  if(x.nextFloor < x.currentFloor) {
+		  //elevator down
+	  }
+	  if(x.nextFloor > x.currentFloor) {
+		  // elevator up
+	  }
+	  pthread_mutex_unlock(&mutex);
   }
-  else{
-    printf("%s%d\n", "NoErrorFoundNumberis ", i);
-  }
-
-  i = 0;
-  i = dequeueFloor(&x);
-  if(i == QUEUE_ERROR){
-    printf("ErrorFoundIn dque\n");
-  }
-  else{
-    printf("%s%d\n", "NoErrorFoundNumberis ", i);
-  }
-
   //not sure if this will ever happen safely
   //elevators never stop being controlled
   //ensure that
@@ -148,13 +130,13 @@ int main(){
 
 void initializeData(struct ElevatorData *ed){
   int i = 0;
-  //initialize floorRequests array
+  //initialize internalFloorRequests array
   for(i = 0; i < (2 + ((NUMBER_OF_FLOORS - 2) * 2)); i++){
-    ed->floorRequests[i] = 0;
+    ed->internalFloorRequests[i] = 0;
   }
-  //initialize internalRequests array
+  //initialize externalFloorRquests
   for(i = 0; i < NUMBER_OF_FLOORS; i++){
-    ed->internalRequests[i] = 0;
+    ed->externalFloorRequests[i] = 0;
   }
   //initialize the floorQueue array
   //initialize the size of the queue
@@ -163,6 +145,7 @@ void initializeData(struct ElevatorData *ed){
   for(i = 0; i < ed->queueSize; i++){
     ed->floorQueue[i] = QUEUE_EMPTY_FLAG;
   }
+
 
   ed->reachedFloorFlag = 0;
   ed->stopProgramFlag = 0;
@@ -181,7 +164,7 @@ void initializeData(struct ElevatorData *ed){
 //this portion of the code may actually be done in the part that
 //manages opening and closing the door
 //will have to be discussed in-person or in group later on
-void openDoor(struct ElevatorData *ed){
+void openDoorRoutine(struct ElevatorData *ed){
   int theTime = time(NULL);
   ed->lastIRTime = theTime;
   ed->doorOpenFlag = 1;
@@ -189,6 +172,7 @@ void openDoor(struct ElevatorData *ed){
   //do the function that "opens the door" here
 }
 
+//run by openDoorRoutine to close the door after it is complete
 void closeDoor(struct ElevatorData *ed){
   ed->doorOpenFlag = 0;
 }
@@ -196,7 +180,7 @@ void closeDoor(struct ElevatorData *ed){
 void irTimeoutFunction(struct ElevatorData *ed, pthread_mutex_t *mutex){
   long theTime = time(NULL);
   pthread_mutex_lock(mutex);
-  //if the door isn'nt open do nothing
+  //if the door isn't open do nothing
   if(ed->doorOpenFlag){
     //wait the initial time to pass
     if(theTime - ed->lastIRTime > INITIAL_DOOR_WAIT_TIME && ed->initialDoorWaitOverFlag == 1){
@@ -230,13 +214,9 @@ void irInterruptFunction(struct ElevatorData *ed, pthread_mutex_t *mutex){
 //don't redo work
 
 void reachFloorFunction(struct ElevatorData *ed, pthread_mutex_t *mutex){
-  //we cannot pause the main thread
-  //however, we will set a flag in the shared data class
-  //and that flag should cause the main thread to stop trying to move
 
-  //the main function should check this value
-  //and if it is not 0, it should immidiately set it back
-  //and then it will know a floor was reached
+
+
 
   pthread_mutex_lock(mutex);
   ed->reachedFloorFlag = 1;
@@ -250,49 +230,90 @@ void reachFloorFunction(struct ElevatorData *ed, pthread_mutex_t *mutex){
 
 }
 
+void floorLightsManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requestNumber, int toggle){
+	//if toggle is 0
+	//lights are probably being turne don
+
+	//if toggle is 1
+	//the door is opening
+	//and lights are probably being turned off
+}
+
+int turnRequestNumberIntofloor(int requestNumber){
+	if(requestNumber =
+
+}
+
 void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requestNumber){
+
+  int realRequest = turnRequestNumberIntofloor(requestNumber);
+
   pthread_mutex_lock(mutex);
-	if((getQueueSize(ed) != 0) && (ed->nextFloor != ed->currentFloor)){
-		if(ed->currentFloor == 1) {
-        //this may be an issue
-				if(ed->nextFloor == ed->nextFloor){
-					//push(&node,2);
-          enqueueFloorToFront(ed, requestNumber);
-				}
-				if((ed->nextFloor == 3) && (ed->nextFloor != 2))  {
-					//push(&node, next_floor);
-          enqueueFloorToFront(ed, requestNumber);
-        }
-
-
-		}
-		if(ed->currentFloor == 2 ) {
-			//push(&node,next_floor);
-      enqueueFloorToFront(ed, requestNumber);
-    }
-		if(ed->currentFloor == 3) {
-				if(ed->nextFloor == 2){
-          enqueueFloorToFront(ed, requestNumber);
-					//push(&node,next_floor);
-				}
-				if((ed->nextFloor == 1) && (ed->nextFloor != 2))  {
-					//push(&node, next_floor);
-          enqueueFloorToFront(ed, requestNumber);
-				}
-		}
-
+  //turn lights on for the floor
+  //add the pressed buttons into the array of pressed buttons
+  floorLightsManager(ed, mutex, requestNumber, 0);
+  //fun
+	//if current floor is 2 go straight to next request
+	if(ed->currentFloor == 2 ) {
+		//wrong, set nextfloor to this and push next floor
+		//to front
+		enqueueFloorToFront(ed, realRequest);
 	}
-	else{
-		if(ed->currentFloor != 1){
+
+	if(ed->currentFloor == 3) {
+		if(realRequest == 2){
+			//fix this
+			//temp = nextfloor
+			//nextfloor = requestNumber
+			//enqueue(temp)
+			enqueueFloorToFront(ed, requestNumber);
+		}
+		if((realRequest == 1) && (ed->nextFloor != 2))  {
+			enqueueFloorToFront(ed, realRequest);
+		}
+		if((realRequest == 1) && (ed->nextFloor == 2))  {
+			enqueueFloor(ed, realRequest);
+		}
+	}
+
+	//if not empty and going somewhere
+	//I am going up from floor 1
+	if(ed->currentFloor == 1) {
+		if(requestNumber == 2){
+			//wrong, set nextfloor to this and push next floor
+			//to front
+			enqueueFloorToFront(ed, requestNumber);
+		}
+		//I am going to next-floor of three
+		//and
+		if((requestNumber == 3) && (ed->nextFloor != 2))  {
+			//wrong, set nextfloor to this and push next floor
+			//to front
+			//enqueueFloorToFront(ed, requestNumber);
+		}
+		if((requestNumber == 3) && (ed->nextFloor == 2))  {
+			enqueueFloor(ed, requestNumber);
+		}
+
+		break;
+	}
+
+	if((ed->currentFloor != 1) && (getQueueSize(ed) == 0)){
 			enqueueFloor(ed, 1);
-		}
-		else {
-			sleep(2);
-		}
 	}
   pthread_mutex_unlock(mutex);
 }
 
+
+/*
+===============================================================================
+===============================================================================
+===============================================================================
+=============================queue managing functions==========================
+===============================================================================
+===============================================================================
+===============================================================================
+*/
 
 //this is fixed, and puts things on the back
 //not the front
@@ -321,15 +342,6 @@ int enqueueFloor(struct ElevatorData *ed, int floor){
   }
 }
 
-/*
-===============================================================================
-===============================================================================
-===============================================================================
-=============================queue managing functions==========================
-===============================================================================
-===============================================================================
-===============================================================================
-*/
 
 //returns the number of values in the queue
 int getQueueSize(struct ElevatorData *ed){
