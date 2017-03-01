@@ -152,8 +152,11 @@ int main(){
   pthread_mutex_lock(&mutex);
   openDoorRoutine(&x);
   while(x.doorFlag == 1){
+    pthread_mutex_unlock(&mutex);
     printf("%s\n", "DOOR IS FLAGGED");
+    pthread_mutex_lock(&mutex);
   }
+  pthread_mutex_unlock(&mutex);
   printf("%s\n", "Door no longer flagged");
   //end the test code
 
@@ -230,6 +233,7 @@ void initializeData(struct ElevatorData *ed){
 void openDoorRoutine(struct ElevatorData *ed){
   int theTime = time(NULL);
   ed->lastIRTime = theTime;
+  ed->doorFlag = 1;
   ed->doorOpenFlag = 1;
   ed->initialDoorWaitOverFlag = 1;
   //do the function that "opens the door" here
@@ -247,6 +251,7 @@ void* irTimeoutFunction(void* args){
   pthread_mutex_t *mutex = ad->mutex;
 
   while(1){
+    printf("RunningTimeout\n");
     long theTime = time(NULL);
     pthread_mutex_lock(mutex);
     //if the door isn't open do nothing
@@ -276,14 +281,17 @@ void* irInterruptFunction(void* args){
     //no if block added as to test
     //essentially the IR is blocked endlessly right now
     //according to the program
-    pthread_mutex_lock(mutex);
-    if(ed->doorOpenFlag){
-      long theTime = time(NULL);
+    //nevermind
+    if(0){
+      pthread_mutex_lock(mutex);
+      if(ed->doorOpenFlag){
+        long theTime = time(NULL);
 
-      ed->lastIRTime = theTime;
-      ed->doorFlag = 1;
-    }
-    pthread_mutex_unlock(mutex);
+        ed->lastIRTime = theTime;
+        ed->doorFlag = 1;
+      }
+      pthread_mutex_unlock(mutex);
+  }
   }
 }
 
