@@ -240,8 +240,23 @@ void floorLightsManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int req
 }
 
 int turnRequestNumberIntofloor(int requestNumber){
-	if(requestNumber =
-
+	if((requestNumber == 0) || (requestNumber == 3) {
+    return 1;
+  }
+  if ((requestNumber == 3) || (requestNumber == 6)){
+    return 3;
+  }
+  if(requestNumber == 2){
+    return 2;
+  }
+  //two down
+  if (requestNumber == 4){
+    return 4;
+  }
+  //two up
+  if (requestNumber == 5){
+    return 5;
+  }
 }
 
 void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requestNumber){
@@ -252,52 +267,69 @@ void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requ
   //turn lights on for the floor
   //add the pressed buttons into the array of pressed buttons
   floorLightsManager(ed, mutex, requestNumber, 0);
-  //fun
-	//if current floor is 2 go straight to next request
-	if(ed->currentFloor == 2 ) {
-		//wrong, set nextfloor to this and push next floor
-		//to front
-		enqueueFloorToFront(ed, realRequest);
-	}
+  int temp;
+  if(realRequest != currentFloor){
 
-	if(ed->currentFloor == 3) {
-		if(realRequest == 2){
-			//fix this
-			//temp = nextfloor
-			//nextfloor = requestNumber
-			//enqueue(temp)
-			enqueueFloorToFront(ed, requestNumber);
-		}
-		if((realRequest == 1) && (ed->nextFloor != 2))  {
-			enqueueFloorToFront(ed, realRequest);
-		}
-		if((realRequest == 1) && (ed->nextFloor == 2))  {
-			enqueueFloor(ed, realRequest);
-		}
-	}
+  	if(ed->currentFloor == 2 ) {
+  		//fixed, hopefully
+      if(realRequest <= 3)
+        {
+          temp = ed->nextfloor;
+          ed->nextfloor = realRequest;
+          enqueueFloorToFront(ed,temp);
+        }
+      else if (realRequest == 4)
+        {
+          temp = ed->nextfloor;
+          ed->nextfloor = 1;
+          enqueueFloorToFront(ed,temp);
+        }
+      else if (realRequest == 5)
+        {
+          temp = ed->nextfloor;
+          ed->nextfloor = 3;
+          enqueueFloorToFront(ed,temp);
+        }
+      break;
+  	}
 
-	//if not empty and going somewhere
-	//I am going up from floor 1
-	if(ed->currentFloor == 1) {
-		if(requestNumber == 2){
-			//wrong, set nextfloor to this and push next floor
-			//to front
-			enqueueFloorToFront(ed, requestNumber);
-		}
-		//I am going to next-floor of three
-		//and
-		if((requestNumber == 3) && (ed->nextFloor != 2))  {
-			//wrong, set nextfloor to this and push next floor
-			//to front
-			//enqueueFloorToFront(ed, requestNumber);
-		}
-		if((requestNumber == 3) && (ed->nextFloor == 2))  {
-			enqueueFloor(ed, requestNumber);
-		}
+  	if(ed->currentFloor == 3) {
+  		if((realRequest == 2)) || (realRequest == 4) || (realRequest == 5){
+  			//fixed, hopefully
+          temp = ed->nextfloor;
+          ed->nextfloor = 2;
+          enqueueFloorToFront(ed,temp);
+  		}
+  		if((realRequest == 1) && (ed->nextFloor != 2))  {
+        temp = ed->nextfloor;
+        ed->nextfloor = 1;
+        enqueueFloorToFront(ed,temp);
+  		}
+  		if((realRequest == 1) && (ed->nextFloor == 2))  {
+  			enqueueFloor(ed, realRequest);
+  		}
+      break;
+  	}
 
-		break;
-	}
+  	if(ed->currentFloor == 1) {
+  		if((realRequest == 2)) || (realRequest == 4) || (realRequest == 5){
+  			//fixed,hopefully
+        temp = ed->nextfloor;
+        ed->nextfloor = 2;
+        enqueueFloorToFront(ed,temp);
+  		}
+  		if((realRequest == 3) && (ed->nextFloor != 2))  {
+        temp = ed->nextfloor;
+        ed->nextfloor = 3;
+        enqueueFloorToFront(ed,temp);
+  		}
+  		if((realRequest == 3) && (ed->nextFloor == 2))  {
+  			enqueueFloor(ed, requestNumber);
+  		}
 
+  		break;
+  	}
+  }
 	if((ed->currentFloor != 1) && (getQueueSize(ed) == 0)){
 			enqueueFloor(ed, 1);
 	}
