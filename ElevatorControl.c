@@ -56,13 +56,28 @@ struct ElevatorData {
   int nextFloor;
 };
 
+struct ArgumentData{
+  struct ElevatorData *ed;
+  pthread_mutex_t *mutex;
+};
+
 //prototypes
 void initializeData(struct ElevatorData *ed);
+
+/*
+THESE ARE ALL BAD AND EVIL
 void irTimeoutFunction(struct ElevatorData *ed, pthread_mutex_t *mutex);
 void irInterruptFunction(struct ElevatorData *ed, pthread_mutex_t *mutex);
 void reachFloorFunction(struct ElevatorData *ed, pthread_mutex_t *mutex);
+*/
+
+void* irTimeoutFunction(void* args);
+void* irInterruptFunction(void* args);
+void* reachFloorFunction(void* args);
+
+
 void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requestNumber);
-void floorLightsManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requestNumber);
+void floorLightsManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requestNumber, int toggle);
 
 //these functions are expected to be called by functions that
 //lock the mutex before they call them
@@ -74,7 +89,7 @@ int dequeueFloor(struct ElevatorData *ed);
 int getQueueSize(struct ElevatorData *ed);
 int increaseQueueSize(struct ElevatorData *ed);
 
-void openDoor(struct ElevatorData *ed);
+void openDoorRoutine(struct ElevatorData *ed);
 void closeDoor(struct ElevatorData *ed);
 
 
@@ -94,8 +109,56 @@ int main(){
 
   //create the threads here
 
+  //---thread info:---
+  //thread has a thread id
+  //thread id is unique in the context of the process
+  //thread id is not necesarily an int, may be a structure
+  //thread id cannot be easily printed
+  //thread id type is pthread_t
+  //create thread function
+  //
+  //int pthread_create(pthread_t *restrict tidp,
+  // const pthread_attr_t *restrict attr, void *(*start_rtn)(void), void *restrict arg);
+  //
+  //first var will hold the id of the new thread
+  //second var contains thread attributes such as priority
+  //third is a function pointer to the function the thread will run
+  //fourth is the arguments of the function being called, as a structure
+  //return value is for errors/status, not zero means error happened
+  //---end thread info:---
+
+  //the threads that need to run in the background
+  pthread_t threads[3];
+
+  //create the argument structure that will be passed to
+  struct ArgumentData ad;
+  ad.ed = &x;
+  ad.mutex = &mutex;
+
+  //all the threads that are running in the background
+  //run these
+  /*
+    void irTimeoutFunction(struct ElevatorData *ed, pthread_mutex_t *mutex);
+    void irInterruptFunction(struct ElevatorData *ed, pthread_mutex_t *mutex);
+    void reachFloorFunction(struct ElevatorData *ed, pthread_mutex_t *mutex);
+  */
+  int error;
+  error = pthread_create(&threads[0], NULL, &irTimeoutFunction, &ad);
+  error = pthread_create(&threads[1], NULL, &irInterruptFunction, &ad);
+  error = pthread_create(&threads[2], NULL, &reachFloorFunction, &ad);
+
+
+  //this is just a test
+  pthread_mutex_lock(&mutex);
+  openDoorRoutine(&x);
+  while(x.doorFlag == 1){
+    printf("%s\n", "DOOR IS FLAGGED");
+  }
+  printf("%s\n", "Door no longer flagged");
+  //end the test code
+
   //start the main loop
-  while(true){
+  while(1){
 	  pthread_mutex_lock(&mutex);
 	  if(x.reachedFloorFlag == 1){
 		  //if going up, add 1 to the current floor
@@ -177,56 +240,70 @@ void closeDoor(struct ElevatorData *ed){
   ed->doorOpenFlag = 0;
 }
 
-void irTimeoutFunction(struct ElevatorData *ed, pthread_mutex_t *mutex){
-  long theTime = time(NULL);
-  pthread_mutex_lock(mutex);
-  //if the door isn't open do nothing
-  if(ed->doorOpenFlag){
-    //wait the initial time to pass
-    if(theTime - ed->lastIRTime > INITIAL_DOOR_WAIT_TIME && ed->initialDoorWaitOverFlag == 1){
-      ed->initialDoorWaitOverFlag = 0;
+//this runs constantly in the background, checking for the IR to time out
+void* irTimeoutFunction(void* args){
+  struct ArgumentData *ad = (struct ArgumentData *)args;
+  struct ElevatorData *ed = ad->ed;
+  pthread_mutex_t *mutex = ad->mutex;
+
+  while(1){
+    long theTime = time(NULL);
+    pthread_mutex_lock(mutex);
+    //if the door isn't open do nothing
+    if(ed->doorOpenFlag){
+      //wait the initial time to pass
+      if(theTime - ed->lastIRTime > INITIAL_DOOR_WAIT_TIME && ed->initialDoorWaitOverFlag == 1){
+        ed->initialDoorWaitOverFlag = 0;
+      }
+      //from them on, pause for a bit if anyone walks through the door again
+      if(theTime - ed->lastIRTime > IR_DOOR_WAIT_TIME  && ed->initialDoorWaitOverFlag == 0){
+        ed->doorFlag = 0;
+      }
     }
-    //from them on, pause for a bit if anyone walks through the door again
-    if(theTime - ed->lastIRTime > IR_DOOR_WAIT_TIME  && ed->initialDoorWaitOverFlag == 0){
-      ed->doorFlag = 0;
-    }
+    pthread_mutex_unlock(mutex);
   }
-  pthread_mutex_unlock(mutex);
 }
 
-void irInterruptFunction(struct ElevatorData *ed, pthread_mutex_t *mutex){
+//this will be run when the IR interrputs
+void* irInterruptFunction(void* args){
+  struct ArgumentData *ad = (struct ArgumentData *)args;
+  struct ElevatorData *ed = ad->ed;
+  pthread_mutex_t *mutex = ad->mutex;
   //if the door is not open, then the IR beam cannot
   //detect anything at all.
-  pthread_mutex_lock(mutex);
-  if(ed->doorOpenFlag){
-    long theTime = time(NULL);
+  while(1){
+    //blocking IR function here
+    //no if block added as to test
+    //essentially the IR is blocked endlessly right now
+    //according to the program
+    pthread_mutex_lock(mutex);
+    if(ed->doorOpenFlag){
+      long theTime = time(NULL);
 
-    ed->lastIRTime = theTime;
-    ed->doorFlag = 1;
+      ed->lastIRTime = theTime;
+      ed->doorFlag = 1;
+    }
+    pthread_mutex_unlock(mutex);
   }
-  pthread_mutex_unlock(mutex);
 }
 
-//this function will run on reaching a floor
-//it will need to open the doors
-//then close if the ir value is false
-//well, that means I don't need group discussion
-//don't redo work
-
-void reachFloorFunction(struct ElevatorData *ed, pthread_mutex_t *mutex){
-
-
-
-
-  pthread_mutex_lock(mutex);
-  ed->reachedFloorFlag = 1;
-  pthread_mutex_unlock(mutex);
-
-  //this function should NOT open the doors
-  //that should be done in the main function
-  //as should checking if the IR flags are off
-  //due to that the elevator will reach floors
-  //that do not need to be stopped at.
+//this thread will run on reaching a floor
+void* reachFloorFunction(void* args){
+  struct ArgumentData *ad = (struct ArgumentData *)args;
+  struct ElevatorData *ed = ad->ed;
+  pthread_mutex_t *mutex = ad->mutex;
+  //check if the door has been opened
+  //this should use some sort of blocking function
+  //that will be provided by the wiringpi library
+  //which is not in use yet.
+  int checkForElevatorFloorReach = 0;
+  while(1){
+    if(checkForElevatorFloorReach){
+      pthread_mutex_lock(mutex);
+      ed->reachedFloorFlag = 1;
+      pthread_mutex_unlock(mutex);
+    }
+  }
 
 }
 
@@ -240,7 +317,7 @@ void floorLightsManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int req
 }
 
 int turnRequestNumberIntofloor(int requestNumber){
-	if((requestNumber == 0) || (requestNumber == 3) {
+	if((requestNumber == 0) || (requestNumber == 3)) {
     return 1;
   }
   if ((requestNumber == 3) || (requestNumber == 6)){
@@ -257,6 +334,7 @@ int turnRequestNumberIntofloor(int requestNumber){
   if (requestNumber == 5){
     return 5;
   }
+  return -1;
 }
 
 void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requestNumber){
@@ -267,67 +345,68 @@ void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requ
   //turn lights on for the floor
   //add the pressed buttons into the array of pressed buttons
   floorLightsManager(ed, mutex, requestNumber, 0);
-  int temp;
-  if(realRequest != currentFloor){
 
+  int temp;
+  //if the request is not the floor the elevator is on or moving away from
+  if(realRequest != ed->currentFloor){
+    //if the current floor is 2
   	if(ed->currentFloor == 2 ) {
-  		//fixed, hopefully
       if(realRequest <= 3)
         {
-          temp = ed->nextfloor;
-          ed->nextfloor = realRequest;
+          temp = ed->nextFloor;
+          ed->nextFloor = realRequest;
           enqueueFloorToFront(ed,temp);
         }
       else if (realRequest == 4)
         {
-          temp = ed->nextfloor;
-          ed->nextfloor = 1;
+          temp = ed->nextFloor;
+          ed->nextFloor = 1;
           enqueueFloorToFront(ed,temp);
         }
       else if (realRequest == 5)
         {
-          temp = ed->nextfloor;
-          ed->nextfloor = 3;
+          temp = ed->nextFloor;
+          ed->nextFloor = 3;
           enqueueFloorToFront(ed,temp);
         }
-      break;
+      return;
   	}
 
   	if(ed->currentFloor == 3) {
-  		if((realRequest == 2)) || (realRequest == 4) || (realRequest == 5){
+  		if((realRequest == 2) || (realRequest == 4) || (realRequest == 5)){
   			//fixed, hopefully
-          temp = ed->nextfloor;
-          ed->nextfloor = 2;
+          temp = ed->nextFloor;
+          ed->nextFloor = 2;
           enqueueFloorToFront(ed,temp);
   		}
   		if((realRequest == 1) && (ed->nextFloor != 2))  {
-        temp = ed->nextfloor;
-        ed->nextfloor = 1;
+        temp = ed->nextFloor;
+        ed->nextFloor = 1;
         enqueueFloorToFront(ed,temp);
   		}
   		if((realRequest == 1) && (ed->nextFloor == 2))  {
   			enqueueFloor(ed, realRequest);
   		}
-      break;
+      return;
   	}
 
   	if(ed->currentFloor == 1) {
-  		if((realRequest == 2)) || (realRequest == 4) || (realRequest == 5){
+  		if((realRequest == 2) || (realRequest == 4) || (realRequest == 5)){
   			//fixed,hopefully
-        temp = ed->nextfloor;
-        ed->nextfloor = 2;
+        temp = ed->nextFloor;
+        ed->nextFloor = 2;
         enqueueFloorToFront(ed,temp);
   		}
   		if((realRequest == 3) && (ed->nextFloor != 2))  {
-        temp = ed->nextfloor;
-        ed->nextfloor = 3;
+        temp = ed->nextFloor;
+        ed->nextFloor = 3;
         enqueueFloorToFront(ed,temp);
   		}
   		if((realRequest == 3) && (ed->nextFloor == 2))  {
   			enqueueFloor(ed, requestNumber);
   		}
 
-  		break;
+  		return;
   	}
   }
 	if((ed->currentFloor != 1) && (getQueueSize(ed) == 0)){
