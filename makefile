@@ -1,2 +1,11 @@
-ElevatorControl.exe : ElevatorControl.c
-	gcc -pthread ElevatorControl.c -o ElevatorControl.exe
+ElevatorControl.exe : ElevatorControl.o types.o queuefunctions.o threadfunctions.o
+	gcc -pthread ElevatorControl.o types.o queuefunctions.o threadfunctions.o -o ElevatorControl.exe
+	rm ElevatorControl.o types.o queuefunctions.o threadfunctions.o
+ElevatorControl.o : ElevatorControl.c
+	gcc -pthread -c ElevatorControl.c -o ElevatorControl.o
+types.o : types.h types.c
+	gcc -pthread -c types.c -o types.o
+queuefunctions.o : queuefunctions.h queuefunctions.c
+	gcc -pthread -c queuefunctions.c -o queuefunctions.o
+threadfunctions.o : threadfunctions.h threadfunctions.c
+	gcc -pthread -c threadfunctions.c -o threadfunctions.o
