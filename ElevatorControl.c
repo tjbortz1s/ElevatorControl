@@ -81,8 +81,13 @@ int main(){
 	  pthread_mutex_lock(&mutex);
 	  if(x.reachedFloorFlag == 1){
 		  //if going up, add 1 to the current floor
+		  if(x.nextFloor > x.currentFloor) {
+			  x.nextFloor = x.nextFloor + 1;
+		  }
 		  //if going down subtract 1 from the currentfloor
-
+		  else if(x.nextFloor < x.currentFloor) {
+			  x.nextFloor = x.nextFloor - 1;
+		  }
 		  //if we just got to the floor we want
 		  //go into a loop opening and closing the door
 		  //set flag back to 0 after
@@ -91,8 +96,14 @@ int main(){
 			//this routine will manage all the open door and close
 			//door flags and so on
 			openDoorRoutine(&x);
+			if(dequeueFloor(&x) == QUEUE_ERROR){
+				//error message
+			}
+			//floorLightsManager(&x,
 			//turn off lights for the floor
 		  }
+		  x.reachedFloorFlag == 0;
+		  
 	  }
 	  if(x.nextFloor < x.currentFloor) {
 		  //elevator down
@@ -175,10 +186,10 @@ int turnRequestNumberIntofloor(int requestNumber){
 	if((requestNumber == 0) || (requestNumber == 3)) {
     return 1;
   }
-  if ((requestNumber == 3) || (requestNumber == 6)){
+  if ((requestNumber == 2) || (requestNumber == 6)){
     return 3;
   }
-  if(requestNumber == 2){
+  if(requestNumber == 1){
     return 2;
   }
   //two down
@@ -206,6 +217,7 @@ void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requ
   if(realRequest != ed->currentFloor){
     //if the current floor is 2
   	if(ed->currentFloor == 2 ) {
+	  // push request to front of queue, regardless of what it is
       if(realRequest <= 3)
         {
           temp = ed->nextFloor;
@@ -229,17 +241,19 @@ void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requ
 
   	if(ed->currentFloor == 3) {
   		if((realRequest == 2) || (realRequest == 4) || (realRequest == 5)){
-  			//fixed, hopefully
+  			// if request is for second floor, add it to front of queue
           temp = ed->nextFloor;
           ed->nextFloor = 2;
           enqueueFloorToFront(ed,temp);
   		}
   		if((realRequest == 1) && (ed->nextFloor != 2))  {
+			//if request is for first floor and we don't need to go to 2, push 1 to front of queue
         temp = ed->nextFloor;
         ed->nextFloor = 1;
         enqueueFloorToFront(ed,temp);
   		}
   		if((realRequest == 1) && (ed->nextFloor == 2))  {
+			// if request is for floor 1, and we need to stop at to 2, push 1 to back of queue
   			enqueueFloor(ed, realRequest);
   		}
       return;
@@ -247,17 +261,19 @@ void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requ
 
   	if(ed->currentFloor == 1) {
   		if((realRequest == 2) || (realRequest == 4) || (realRequest == 5)){
-  			//fixed,hopefully
+  			// if request is for the second floor, add it to front of queue
         temp = ed->nextFloor;
         ed->nextFloor = 2;
         enqueueFloorToFront(ed,temp);
   		}
   		if((realRequest == 3) && (ed->nextFloor != 2))  {
+			//if request is for floor 3, and we don't have to stop at 2, add 3 to front of queue
         temp = ed->nextFloor;
         ed->nextFloor = 3;
         enqueueFloorToFront(ed,temp);
   		}
   		if((realRequest == 3) && (ed->nextFloor == 2))  {
+			//if request is for floor 3, and we have to stop at 2, add 3 to back of queue
   			enqueueFloor(ed, requestNumber);
   		}
 
@@ -265,6 +281,7 @@ void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requ
   	}
   }
 	if((ed->currentFloor != 1) && (getQueueSize(ed) == 0)){
+		//if the queue is empty, the elevator should return to floor 1
 			enqueueFloor(ed, 1);
 	}
   pthread_mutex_unlock(mutex);
