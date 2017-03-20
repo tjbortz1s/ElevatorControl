@@ -132,3 +132,12 @@ int increaseQueueSize(struct ElevatorData *ed){
   }
   return QUEUE_SUCCESS;
 }
+
+void printFullQueue(struct ElevatorData *ed){
+  int i = 0;
+  printf("%s\n", "---Beginning Queue Print---");
+  for(i = 0; i < getQueueSize(ed); i++){
+    printf("%s%d%s%d\n", "At Position: ", i, " Is Value: ", ed->floorQueue[i]);
+  }
+  printf("%s\n", "---Ending Queue Print---");
+}

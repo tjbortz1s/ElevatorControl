@@ -11,3 +11,4 @@ int enqueueFloorToFront(struct ElevatorData *ed, int floor);
 int dequeueFloor(struct ElevatorData *ed);
 int getQueueSize(struct ElevatorData *ed);
 int increaseQueueSize(struct ElevatorData *ed);
+void printFullQueue(struct ElevatorData *ed);

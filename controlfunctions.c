@@ -51,7 +51,7 @@ int turnRequestNumberIntofloor(int requestNumber){
 }
 
 void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requestNumber){
-
+  printf("%s%d\n", "JUST GOT ", requestNumber);
   int realRequest = turnRequestNumberIntofloor(requestNumber);
 
   pthread_mutex_lock(mutex);
@@ -131,5 +131,6 @@ void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requ
 		//if the queue is empty, the elevator should return to floor 1
 			enqueueFloor(ed, 1);
 	}
+  printFullQueue(ed);
   pthread_mutex_unlock(mutex);
 }
