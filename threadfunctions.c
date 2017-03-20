@@ -25,6 +25,17 @@ void* irTimeoutFunction(void* args){
   }
 }
 
+void irTriggerFunction(struct ElevatorData *ed, pthread_mutex_t *mutex){
+  pthread_mutex_lock(mutex);
+  if(ed->doorOpenFlag){
+    long theTime = time(NULL);
+
+    ed->lastIRTime = theTime;
+    ed->doorFlag = 1;
+  }
+  pthread_mutex_unlock(mutex);
+}
+
 //this will be run when the IR interrputs
 void* irInterruptFunction(void* args){
   struct ArgumentData *ad = (struct ArgumentData *)args;
@@ -41,20 +52,12 @@ void* irInterruptFunction(void* args){
     //if(err == 0) timeout happened
     //if(err == 1) pin was triggered
     if(0){
-      pthread_mutex_lock(mutex);
-      if(ed->doorOpenFlag){
-        long theTime = time(NULL);
-
-        ed->lastIRTime = theTime;
-        ed->doorFlag = 1;
-      }
-      pthread_mutex_unlock(mutex);
-  }
+      irTriggerFunction(ed, mutex);
+    }
   }
 }
 
-//this thread will run on reaching a floor
-void* reachFloorFunction(void* args){
+void* reachFloorInterruptFunction(void* args){
   struct ArgumentData *ad = (struct ArgumentData *)args;
   struct ElevatorData *ed = ad->ed;
   pthread_mutex_t *mutex = ad->mutex;
@@ -72,15 +75,21 @@ void* reachFloorFunction(void* args){
     //if(err == 0) timeout happened
     //if(err == 1) pin was triggered
     if(checkForElevatorFloorReach){
-      pthread_mutex_lock(mutex);
-      ed->reachedFloorFlag = 1;
-      pthread_mutex_unlock(mutex);
+      reachFloorTriggerFunction(ed, mutex);
     }
   }
-
 }
 
-void* keyListener(void* args){
+
+//this thread will run on reaching a floor
+void reachFloorTriggerFunction(struct ElevatorData *ed, pthread_mutex_t *mutex){
+  pthread_mutex_lock(mutex);
+  ed->reachedFloorFlag = 1;
+  pthread_mutex_unlock(mutex);
+}
+
+
+void* keyInterruptFunction(void* args){
   struct ArgumentData *ad = (struct ArgumentData *)args;
   struct ElevatorData *ed = ad->ed;
   pthread_mutex_t *mutex = ad->mutex;
@@ -117,5 +126,22 @@ void* keyListener(void* args){
     else if(str[0] == FLOOR_CHAR_EXTERNAL_THREE_DOWN){
       floorQueueManager(ed, mutex, FLOOR_THREE_DOWN_REQUEST);
     }
+
+    //----TEST KEYS SHOULD BE TURNED OFF LATER---
+    else if(str[0] == 'y'){
+      //IR Interrupt
+      printf("%s\n", "Triggering IR Interrupt");
+      irTriggerFunction(ed, mutex);
+    }
+    else if(str[0] == 'h'){
+      //floor reach interrupt
+      printf("%s\n", "Triggering ReachFloor Interrupt");
+      reachFloorTriggerFunction(ed, mutex);
+
+    }
+    else if(str[0] == 'n'){
+      //none yet
+    }
+    //----TEST KEYS SHOULD BE TURNED OFF LATER---
   }
 }

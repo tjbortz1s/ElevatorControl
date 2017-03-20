@@ -48,23 +48,8 @@ int main(){
   int error;
   error = pthread_create(&threads[0], NULL, &irTimeoutFunction, &ad);
   error = pthread_create(&threads[1], NULL, &irInterruptFunction, &ad);
-  error = pthread_create(&threads[2], NULL, &reachFloorFunction, &ad);
-  error = pthread_create(&threads[3], NULL, &keyListener, &ad);
-
-
-  //this is just a test
-  pthread_mutex_lock(&mutex);
-  openDoorRoutine(&x);
-  while(x.doorFlag == 1){
-    pthread_mutex_unlock(&mutex);
-    //printf("%s\n", "DOOR IS FLAGGED");
-    pthread_mutex_lock(&mutex);
-  }
-  pthread_mutex_unlock(&mutex);
-  printf("%s\n", "Door no longer flagged");
-  //end the test code
-
-  //keep track of the gipo status
+  error = pthread_create(&threads[2], NULL, &reachFloorInterruptFunction, &ad);
+  error = pthread_create(&threads[3], NULL, &keyInterruptFunction, &ad);
 
   //start the main loop
   while(1){
@@ -95,7 +80,6 @@ int main(){
   			//turn off lights for the floor
 		  }
 		  x.reachedFloorFlag == 0;
-
 	  }
 
     //if the elevator needs to move up or down to get to where it is going
