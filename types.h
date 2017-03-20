@@ -25,6 +25,16 @@ extern const int IR_DOOR_WAIT_TIME;
 
 extern const int NUMBER_OF_FLOORS;
 
+extern const char FLOOR_CHAR_EXTERNAL_ONE_UP;
+
+extern const char FLOOR_CHAR_EXTERNAL_TWO_UP;
+extern const char FLOOR_CHAR_EXTERNAL_TWO_DOWN;
+
+extern const char FLOOR_CHAR_EXTERNAL_THREE_DOWN;
+
+extern const char FLOOR_CHAR_INTERNAL_ONE;
+extern const char FLOOR_CHAR_INTERNAL_TWO;
+extern const char FLOOR_CHAR_INTERNAL_THREE;
 
 //structures
 struct ElevatorData {
