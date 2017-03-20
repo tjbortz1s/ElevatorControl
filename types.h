@@ -36,6 +36,16 @@ extern const char FLOOR_CHAR_INTERNAL_ONE;
 extern const char FLOOR_CHAR_INTERNAL_TWO;
 extern const char FLOOR_CHAR_INTERNAL_THREE;
 
+extern const int ELEVATOR_DEFAULT_SPEED_DOWN;
+extern const int ELEVATOR_DEFAULT_SPEED_UP;
+
+extern const int GIPO_PIN_IR_SEND;
+extern const int GIPO_PIN_IR_RECIEVE;
+extern const int GIPO_PIN_REED;
+extern const int GIPO_PIN_MOTOR_DOWN;
+extern const int GIPO_PIN_MOTOR_UP;
+extern const int GIPO_PIN_MOTOR_PWM;
+
 //structures
 struct ElevatorData {
   //used by lights data

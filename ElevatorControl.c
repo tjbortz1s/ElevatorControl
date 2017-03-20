@@ -11,9 +11,6 @@
 void initializeData(struct ElevatorData *ed);
 
 int main(){
-	//we cannot pause the main thread
-  //however, we will set a flag in the shared data class
-  //and that flag should cause the main thread to stop trying to move
 
   //the main function should check this value (reachedfloorFlag)
   //and if it is not 0, it should immidiately set it back
@@ -21,28 +18,23 @@ int main(){
 
   struct ElevatorData x;
   initializeData(&x);
+  //int err = wiringPiSetup();
+  //if(err == -1) then there is an error and it should be
+  //handled
+
+  //now setup the pins
+  //pinMode(GIPO_PIN_MOTOR_PWM, PWM_OUTPUT);
+  //pinMode(GIPO_PIN_MOTOR_UP, OUTPUT);
+  //pinMode(GIPO_PIN_MOTOR_DOWN, OUTPUT);
+  //pinMode(GIPO_PIN_REED, INPUT);
+  //pinMode(GIPO_PIN_IR_RECIEVE, INPUT);
+  //pinMode(GIPO_PIN_IR_SEND, OUTPUT);
+  //ONLY PIN ONE (BCM_GIPO_18) SUPPORTS PWM OUTPUT
+
   pthread_mutex_t mutex;
   pthread_mutex_init(&mutex, NULL);
 
   //create the threads here
-
-  //---thread info:---
-  //thread has a thread id
-  //thread id is unique in the context of the process
-  //thread id is not necesarily an int, may be a structure
-  //thread id cannot be easily printed
-  //thread id type is pthread_t
-  //create thread function
-  //
-  //int pthread_create(pthread_t *restrict tidp,
-  // const pthread_attr_t *restrict attr, void *(*start_rtn)(void), void *restrict arg);
-  //
-  //first var will hold the id of the new thread
-  //second var contains thread attributes such as priority
-  //third is a function pointer to the function the thread will run
-  //fourth is the arguments of the function being called, as a structure
-  //return value is for errors/status, not zero means error happened
-  //---end thread info:---
 
   //the threads that need to run in the background
   pthread_t threads[4];
@@ -72,6 +64,8 @@ int main(){
   printf("%s\n", "Door no longer flagged");
   //end the test code
 
+  //keep track of the gipo status
+
   //start the main loop
   while(1){
 	  pthread_mutex_lock(&mutex);
@@ -90,15 +84,15 @@ int main(){
 		  //go into a loop opening and closing the door
 		  //set flag back to 0 after
 		  if(x.nextFloor == x.currentFloor) {
-			// open doors, remove nextfloor from queue, close doors
-			//this routine will manage all the open door and close
-			//door flags and so on
-			openDoorRoutine(&x);
-			if(dequeueFloor(&x) == QUEUE_ERROR){
-				//error message
-			}
-			//floorLightsManager(&x,
-			//turn off lights for the floor
+  			// open doors, remove nextfloor from queue, close doors
+  			//this routine will manage all the open door and close
+  			//door flags and so on
+  			openDoorRoutine(&x);
+  			if(dequeueFloor(&x) == QUEUE_ERROR){
+  				//error message
+  			}
+  			//floorLightsManager(&x,
+  			//turn off lights for the floor
 		  }
 		  x.reachedFloorFlag == 0;
 
@@ -107,10 +101,16 @@ int main(){
     //if the elevator needs to move up or down to get to where it is going
 	  if(x.nextFloor < x.currentFloor) {
 		  //elevator down
+      //
+      toggleMotorDown(ELEVATOR_DEFAULT_SPEED_DOWN);
 	  }
 	  if(x.nextFloor > x.currentFloor) {
 		  // elevator up
+      toggleMotorUp(ELEVATOR_DEFAULT_SPEED_UP);
 	  }
+    if(x.nextFloor == x.currentFloor){
+      toggleMotorOff();
+    }
     //unlock the mutex
 	  pthread_mutex_unlock(&mutex);
   }

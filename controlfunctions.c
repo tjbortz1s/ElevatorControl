@@ -134,3 +134,33 @@ void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requ
   printFullQueue(ed);
   pthread_mutex_unlock(mutex);
 }
+
+int toggleMotorUp(int speed){
+  int toggleMotorDown(int speed){
+    if(speed > 0 && speed < 1024){
+      //digitalWrite(GIPO_PIN_MOTOR_UP, 1);
+      //pwmWrite(GIPO_PIN_MOTOR_PWM, speed);
+      return 0;
+    }
+    else{
+        return -1;
+    }
+  }
+}
+
+int toggleMotorDown(int speed){
+  if(speed > 0 && speed < 1024){
+    //digitalWrite(GIPO_PIN_MOTOR_DOWN, 1);
+    //pwmWrite(GIPO_PIN_MOTOR_PWM, speed);
+    return 0;
+  }
+  else{
+      return -1;
+  }
+}
+
+void toggleMotorOff(){
+  //digitalWrite(GIPO_PIN_MOTOR_UP, 0);
+  //digitalWrite(GIPO_PIN_MOTOR_DOWN, 0);
+  //pwmWrite(GIPO_PIN_MOTOR_PWM, 0);
+}

@@ -24,6 +24,16 @@ const int IR_DOOR_WAIT_TIME = 3;
 
 const int NUMBER_OF_FLOORS = 3;
 
+const int ELEVATOR_DEFAULT_SPEED_DOWN = 100;
+const int ELEVATOR_DEFAULT_SPEED_UP = 100;
+
+const int GIPO_PIN_REED = 0;
+const int GIPO_PIN_IR_SEND = 1;
+const int GIPO_PIN_IR_RECIEVE = 2;
+const int GIPO_PIN_MOTOR_DOWN = 3;
+const int GIPO_PIN_MOTOR_UP = 4;
+const int GIPO_PIN_MOTOR_PWM = 5;
+
 //THE BUTTON LAYOUT FOR THE Elevator
 //MAPPED ONTO KEYBOARD KEYS TO BE PRESSED
 // the three floors
