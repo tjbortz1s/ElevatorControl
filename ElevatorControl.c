@@ -45,17 +45,19 @@ int main(){
   //---end thread info:---
 
   //the threads that need to run in the background
-  pthread_t threads[3];
+  pthread_t threads[4];
 
   //create the argument structure that will be passed to
   struct ArgumentData ad;
   ad.ed = &x;
   ad.mutex = &mutex;
 
+  //create all the background threads
   int error;
   error = pthread_create(&threads[0], NULL, &irTimeoutFunction, &ad);
   error = pthread_create(&threads[1], NULL, &irInterruptFunction, &ad);
   error = pthread_create(&threads[2], NULL, &reachFloorFunction, &ad);
+  error = pthread_create(&threads[3], NULL, &keyListener, &ad);
 
 
   //this is just a test
@@ -63,7 +65,7 @@ int main(){
   openDoorRoutine(&x);
   while(x.doorFlag == 1){
     pthread_mutex_unlock(&mutex);
-    printf("%s\n", "DOOR IS FLAGGED");
+    //printf("%s\n", "DOOR IS FLAGGED");
     pthread_mutex_lock(&mutex);
   }
   pthread_mutex_unlock(&mutex);
@@ -73,6 +75,8 @@ int main(){
   //start the main loop
   while(1){
 	  pthread_mutex_lock(&mutex);
+    //if the floor was reached as triggered by the
+    //reached floor function
 	  if(x.reachedFloorFlag == 1){
 		  //if going up, add 1 to the current floor
 		  if(x.nextFloor > x.currentFloor) {
@@ -99,12 +103,15 @@ int main(){
 		  x.reachedFloorFlag == 0;
 
 	  }
+
+    //if the elevator needs to move up or down to get to where it is going
 	  if(x.nextFloor < x.currentFloor) {
 		  //elevator down
 	  }
 	  if(x.nextFloor > x.currentFloor) {
 		  // elevator up
 	  }
+    //unlock the mutex
 	  pthread_mutex_unlock(&mutex);
   }
   //not sure if this will ever happen safely
