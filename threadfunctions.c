@@ -18,7 +18,9 @@ void* irTimeoutFunction(void* args){
       }
       //from them on, pause for a bit if anyone walks through the door again
       if(theTime - ed->lastIRTime > IR_DOOR_WAIT_TIME  && ed->initialDoorWaitOverFlag == 0){
+        logString("Closing Door", LOG_LEVEL_DEBUG);
         ed->doorFlag = 0;
+        closeDoor(ed);
       }
     }
     pthread_mutex_unlock(mutex);

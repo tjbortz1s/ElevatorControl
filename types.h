@@ -46,6 +46,13 @@ extern const int GIPO_PIN_MOTOR_DOWN;
 extern const int GIPO_PIN_MOTOR_UP;
 extern const int GIPO_PIN_MOTOR_PWM;
 
+//lots of output, shouldn't have alot happening
+extern const int LOG_LEVEL_DEBUG;
+//are there bugs happening?
+extern const int LOG_LEVEL_ERROR;
+//I WANT EVERYTHING EVEN IF IT LOOPS A THOUSAND TIMES A SECOND!
+extern const int LOG_LEVEL_SUPERDEBUG;
+
 //structures
 struct ElevatorData {
   //used by lights data
@@ -88,3 +95,11 @@ struct ArgumentData{
   struct ElevatorData *ed;
   pthread_mutex_t *mutex;
 };
+
+
+//functions
+//logging will have levels
+//log function will take a string and an int
+//logs above the level of the current number will display
+//logs below the level set here will not display
+void logString(char* string, int level);

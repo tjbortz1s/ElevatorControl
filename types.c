@@ -34,6 +34,10 @@ const int GIPO_PIN_MOTOR_DOWN = 3;
 const int GIPO_PIN_MOTOR_UP = 4;
 const int GIPO_PIN_MOTOR_PWM = 5;
 
+const int LOG_LEVEL_SUPERDEBUG = 90;
+const int LOG_LEVEL_DEBUG = 100;
+const int LOG_LEVEL_ERROR = 110;
+
 //THE BUTTON LAYOUT FOR THE Elevator
 //MAPPED ONTO KEYBOARD KEYS TO BE PRESSED
 // the three floors
@@ -56,3 +60,12 @@ const char FLOOR_CHAR_EXTERNAL_THREE_DOWN = 'd';
 const char FLOOR_CHAR_INTERNAL_ONE = 'r';
 const char FLOOR_CHAR_INTERNAL_TWO = 'f';
 const char FLOOR_CHAR_INTERNAL_THREE = 'v';
+
+
+//THIS DEFINES THE LOGGING LEVEL CHANGE TO REMOVE LOG PRINTING
+int loggingLevel = 100;
+void logString(char* string, int level){
+  if(loggingLevel <= level){
+    printf("%s\n", string);
+  }
+}

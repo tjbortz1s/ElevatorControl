@@ -57,12 +57,15 @@ int main(){
     //if the floor was reached as triggered by the
     //reached floor function
 	  if(x.reachedFloorFlag == 1){
+      logString("Reached Floor Flag Hit", LOG_LEVEL_DEBUG);
 		  //if going up, add 1 to the current floor
 		  if(x.nextFloor > x.currentFloor) {
+        logString("Moving up a floor", LOG_LEVEL_DEBUG);
 			  x.nextFloor = x.nextFloor + 1;
 		  }
 		  //if going down subtract 1 from the currentfloor
 		  else if(x.nextFloor < x.currentFloor) {
+        logString("Moving down a floor", LOG_LEVEL_DEBUG);
 			  x.nextFloor = x.nextFloor - 1;
 		  }
 		  //if we just got to the floor we want
@@ -72,27 +75,33 @@ int main(){
   			// open doors, remove nextfloor from queue, close doors
   			//this routine will manage all the open door and close
   			//door flags and so on
+        logString("Opening Door", LOG_LEVEL_DEBUG);
   			openDoorRoutine(&x);
   			if(dequeueFloor(&x) == QUEUE_ERROR){
-  				//error message
+          //log the fact an error happened
+          logString("QUEUE_ERROR", LOG_LEVEL_ERROR);
   			}
   			//floorLightsManager(&x,
   			//turn off lights for the floor
 		  }
-		  x.reachedFloorFlag == 0;
+      logString("Reached floor flag end", LOG_LEVEL_DEBUG);
+		  x.reachedFloorFlag = 0;
 	  }
 
     //if the elevator needs to move up or down to get to where it is going
 	  if(x.nextFloor < x.currentFloor) {
 		  //elevator down
       //
+      logString("MovingDown", LOG_LEVEL_SUPERDEBUG);
       toggleMotorDown(ELEVATOR_DEFAULT_SPEED_DOWN);
 	  }
 	  if(x.nextFloor > x.currentFloor) {
 		  // elevator up
+      logString("MovingUp", LOG_LEVEL_SUPERDEBUG);
       toggleMotorUp(ELEVATOR_DEFAULT_SPEED_UP);
 	  }
     if(x.nextFloor == x.currentFloor){
+      logString("Not Moving", LOG_LEVEL_SUPERDEBUG);
       toggleMotorOff();
     }
     //unlock the mutex
