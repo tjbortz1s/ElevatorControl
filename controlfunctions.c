@@ -53,8 +53,8 @@ int turnRequestNumberIntofloor(int requestNumber){
 void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requestNumber){
 
   //ISSUES AND bugs
-  //WHEN THE CURRENTFLOOR IS THE SAME AS THE NEXT FLOOR DO NOT PUT NEXTFLOOR ON THE QUEUE
-  //request to go to floor 2  through first floor up button when elevator is still at floor 1 does not do anything
+  //WHEN THE CURRENTFLOOR IS THE SAME AS THE NEXT FLOOR DO NOT PUT NEXTFLOOR ON THE QUEUE (fixed, I think this was only happening in specific cases which are now addressed)
+  //request to go to floor 2  through first floor up button when elevator is still at floor 1 does not do anything (The first floor up button would only call the elevator to floor one, the floor 2 button inside the elevator needs to be pushed to move it)
   //when at floor 1 and still requests by way of floor 2 or 3 up and down function
   //when moving between one and two a request to one presently works well, but this may be due to the first bug listed
   //
@@ -69,8 +69,12 @@ void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requ
   floorLightsManager(ed, mutex, requestNumber, 0);
 
   int temp;
+  //This checks for floor two up and down special cases, it's not pretty, but it works
+  if((realRequest == 4) || (realRequest ==5)){
+    temp = 2;
+  }
   //if the request is not the floor the elevator is on or moving away from
-  if(realRequest != ed->currentFloor){
+  if((realRequest != ed->currentFloor)|| (temp != 2) || (realRequest != -1)){
     //if the current floor is 2
   	if(ed->currentFloor == 2 ) {
 	  // push request to front of queue, regardless of what it is
@@ -92,6 +96,7 @@ void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requ
           ed->nextFloor = 3;
           enqueueFloorToFront(ed,temp);
         }
+      printFullQueue(ed);
       pthread_mutex_unlock(mutex);
       return;
   	}
@@ -113,6 +118,7 @@ void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requ
 			// if request is for floor 1, and we need to stop at to 2, push 1 to back of queue
   			enqueueFloor(ed, realRequest);
   		}
+      printFullQueue(ed);
       pthread_mutex_unlock(mutex);
       return;
   	}
@@ -134,6 +140,7 @@ void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requ
 			//if request is for floor 3, and we have to stop at 2, add 3 to back of queue
   			enqueueFloor(ed, requestNumber);
   		}
+      printFullQueue(ed);
       pthread_mutex_unlock(mutex);
   		return;
   	}
