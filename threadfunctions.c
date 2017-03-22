@@ -115,18 +115,48 @@ void* keyInterruptFunction(void* args){
     }
 
     else if(str[0] == FLOOR_CHAR_EXTERNAL_ONE_UP){
-      floorQueueManager(ed, mutex, FLOOR_ONE_UP_REQUEST);
+      //if the elevator is on the floor the request was for
+      //just open the doors
+      if(elevatorIsOnFloor(ed, mutex, 1)){
+        pthread_mutex_lock(mutex);
+        openDoorRoutine(ed);
+        pthread_mutex_unlock(mutex);
+      }
+      else{
+        floorQueueManager(ed, mutex, FLOOR_ONE_UP_REQUEST);
+      }
     }
 
     else if(str[0] == FLOOR_CHAR_EXTERNAL_TWO_UP){
-      floorQueueManager(ed, mutex, FLOOR_TWO_UP_REQUEST);
+      if(elevatorIsOnFloor(ed, mutex, 2)){
+        pthread_mutex_lock(mutex);
+        openDoorRoutine(ed);
+        pthread_mutex_unlock(mutex);
+      }
+      else{
+        floorQueueManager(ed, mutex, FLOOR_TWO_UP_REQUEST);
+      }
     }
     else if(str[0] == FLOOR_CHAR_EXTERNAL_TWO_DOWN){
-      floorQueueManager(ed, mutex, FLOOR_TWO_DOWN_REQUEST);
+      if(elevatorIsOnFloor(ed, mutex, 2)){
+        pthread_mutex_lock(mutex);
+        openDoorRoutine(ed);
+        pthread_mutex_unlock(mutex);
+      }
+      else{
+        floorQueueManager(ed, mutex, FLOOR_TWO_DOWN_REQUEST);
+      }
     }
 
     else if(str[0] == FLOOR_CHAR_EXTERNAL_THREE_DOWN){
-      floorQueueManager(ed, mutex, FLOOR_THREE_DOWN_REQUEST);
+      if(elevatorIsOnFloor(ed, mutex, 3)){
+        pthread_mutex_lock(mutex);
+        openDoorRoutine(ed);
+        pthread_mutex_unlock(mutex);
+      }
+      else{
+        floorQueueManager(ed, mutex, FLOOR_THREE_DOWN_REQUEST);
+      }
     }
 
     //----TEST KEYS SHOULD BE TURNED OFF LATER---
@@ -149,4 +179,17 @@ void* keyInterruptFunction(void* args){
     }
     //----TEST KEYS SHOULD BE TURNED OFF LATER---
   }
+}
+
+int elevatorIsOnFloor(struct ElevatorData *ed, pthread_mutex_t *mutex, int reqFloorNum){
+  pthread_mutex_lock(mutex);
+  if(ed->currentFloor == reqFloorNum && ed->nextFloor == ed->currentFloor){
+    pthread_mutex_unlock(mutex);
+    return 1;
+  }
+  else{
+    pthread_mutex_unlock(mutex);
+    return 0;
+  }
+  pthread_mutex_unlock(mutex);
 }

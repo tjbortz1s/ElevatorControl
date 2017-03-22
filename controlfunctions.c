@@ -7,11 +7,16 @@
 //manages opening and closing the door
 //will have to be discussed in-person or in group later on
 void openDoorRoutine(struct ElevatorData *ed){
-  int theTime = time(NULL);
-  ed->lastIRTime = theTime;
-  ed->doorFlag = 1;
-  ed->doorOpenFlag = 1;
-  ed->initialDoorWaitOverFlag = 1;
+  if(ed->currentFloor == ed->nextFloor){
+    int theTime = time(NULL);
+    ed->lastIRTime = theTime;
+    ed->doorFlag = 1;
+    ed->doorOpenFlag = 1;
+    ed->initialDoorWaitOverFlag = 1;
+  }
+  else{
+    logString("Tried to open doors with moving elevator", LOG_LEVEL_ERROR);
+  }
   //do the function that "opens the door" here
 }
 
@@ -54,8 +59,7 @@ void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requ
 
   //ISSUES AND bugs
   //WHEN THE CURRENTFLOOR IS THE SAME AS THE NEXT FLOOR DO NOT PUT NEXTFLOOR ON THE QUEUE (fixed, I think this was only happening in specific cases which are now addressed)
-  //request to go to floor 2  through first floor up button when elevator is still at floor 1 does not do anything (The first floor up button would only call the elevator to floor one, the floor 2 button inside the elevator needs to be pushed to move it)
-  //when at floor 1 and still requests by way of floor 2 or 3 up and down function
+  //function will now be called through button interrupt ONLY now when the button press is not on the same floor as the elevator.
   //when moving between one and two a request to one presently works well, but this may be due to the first bug listed
   //
 

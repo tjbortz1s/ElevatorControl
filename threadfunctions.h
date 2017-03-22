@@ -16,3 +16,5 @@ void* reachFloorInterruptFunction(void* args);
 //then when a key has been pressed
 //call functions as is appropriate
 void* keyInterruptFunction(void* args);
+
+int elevatorIsOnFloor(struct ElevatorData *ed, pthread_mutex_t *mutex, int reqFloorNum);
