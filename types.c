@@ -69,3 +69,16 @@ void logString(char* string, int level){
     printf("%s\n", string);
   }
 }
+
+
+void debugBlock(struct ElevatorData *ed){
+  if(loggingLevel <= 100){ //if log level debug or more verbose
+    //first print the queue
+    printFullQueue(ed);
+    //next print other info
+    printf("\n%s\n", "---VarInfo---");
+    printf("%s%d\t\n", "CurrentFloor", ed->currentFloor);
+    printf("%s%d\t\n", "NextFloor", ed->nextFloor);
+    printf("%s\n\n", "---VarInfoEnd---");
+  }
+}

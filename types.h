@@ -103,3 +103,5 @@ struct ArgumentData{
 //logs above the level of the current number will display
 //logs below the level set here will not display
 void logString(char* string, int level);
+
+void debugBlock(struct ElevatorData *ed);

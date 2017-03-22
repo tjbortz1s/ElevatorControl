@@ -142,7 +142,10 @@ void* keyInterruptFunction(void* args){
 
     }
     else if(str[0] == 'n'){
-      //none yet
+      //print the full queue
+      pthread_mutex_lock(mutex);
+      debugBlock(ed);
+      pthread_mutex_unlock(mutex);
     }
     //----TEST KEYS SHOULD BE TURNED OFF LATER---
   }

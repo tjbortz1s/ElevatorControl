@@ -51,6 +51,12 @@ int turnRequestNumberIntofloor(int requestNumber){
 }
 
 void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requestNumber){
+
+  //ISSUES AND bugs
+  //WHEN THE CURRENTFLOOR IS THE SAME AS THE NEXT FLOOR DO NOT PUT NEXTFLOOR ON THE QUEUE
+  //
+
+
   printf("%s%d\n", "JUST GOT ", requestNumber);
   int realRequest = turnRequestNumberIntofloor(requestNumber);
 
@@ -83,6 +89,7 @@ void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requ
           ed->nextFloor = 3;
           enqueueFloorToFront(ed,temp);
         }
+      pthread_mutex_unlock(mutex);
       return;
   	}
 
@@ -103,6 +110,7 @@ void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requ
 			// if request is for floor 1, and we need to stop at to 2, push 1 to back of queue
   			enqueueFloor(ed, realRequest);
   		}
+      pthread_mutex_unlock(mutex);
       return;
   	}
 
@@ -123,7 +131,7 @@ void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requ
 			//if request is for floor 3, and we have to stop at 2, add 3 to back of queue
   			enqueueFloor(ed, requestNumber);
   		}
-
+      pthread_mutex_unlock(mutex);
   		return;
   	}
   }

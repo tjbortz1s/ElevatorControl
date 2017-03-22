@@ -61,12 +61,12 @@ int main(){
 		  //if going up, add 1 to the current floor
 		  if(x.nextFloor > x.currentFloor) {
         logString("Moving up a floor", LOG_LEVEL_DEBUG);
-			  x.nextFloor = x.nextFloor + 1;
+			  x.currentFloor = x.currentFloor + 1;
 		  }
 		  //if going down subtract 1 from the currentfloor
 		  else if(x.nextFloor < x.currentFloor) {
         logString("Moving down a floor", LOG_LEVEL_DEBUG);
-			  x.nextFloor = x.nextFloor - 1;
+			  x.currentFloor = x.currentFloor - 1;
 		  }
 		  //if we just got to the floor we want
 		  //go into a loop opening and closing the door
@@ -77,9 +77,11 @@ int main(){
   			//door flags and so on
         logString("Opening Door", LOG_LEVEL_DEBUG);
   			openDoorRoutine(&x);
-  			if(dequeueFloor(&x) == QUEUE_ERROR){
+        x.nextFloor = dequeueFloor(&x);
+  			if(x.nextFloor == QUEUE_ERROR){
           //log the fact an error happened
           logString("QUEUE_ERROR", LOG_LEVEL_ERROR);
+          x.nextFloor = x.currentFloor;
   			}
   			//floorLightsManager(&x,
   			//turn off lights for the floor
@@ -142,6 +144,6 @@ void initializeData(struct ElevatorData *ed){
   ed->lastIRTime = 0;
   ed->doorOpenFlag = 0;
   ed->initialDoorWaitOverFlag = 0;
-  ed->currentFloor = 0;
-  ed->nextFloor = 0;
+  ed->currentFloor = 1;
+  ed->nextFloor = 1;
 }
