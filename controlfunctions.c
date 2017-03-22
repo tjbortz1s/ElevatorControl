@@ -54,6 +54,9 @@ void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requ
 
   //ISSUES AND bugs
   //WHEN THE CURRENTFLOOR IS THE SAME AS THE NEXT FLOOR DO NOT PUT NEXTFLOOR ON THE QUEUE
+  //request to go to floor 2  through first floor up button when elevator is still at floor 1 does not do anything
+  //when at floor 1 and still requests by way of floor 2 or 3 up and down function
+  //when moving between one and two a request to one presently works well, but this may be due to the first bug listed
   //
 
 
