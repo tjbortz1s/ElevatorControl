@@ -74,7 +74,7 @@ void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requ
     temp = 2;
   }
   //if the request is not the floor the elevator is on or moving away from
-  if((realRequest != ed->currentFloor)|| (temp != 2) || (realRequest != -1)){
+  if((realRequest != ed->currentFloor) && (temp != 2) && (realRequest != -1)){
     //if the current floor is 2
   	if(ed->currentFloor == 2 ) {
 	  // push request to front of queue, regardless of what it is
