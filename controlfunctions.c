@@ -73,20 +73,33 @@ void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requ
   floorLightsManager(ed, mutex, requestNumber, 0);
 
   int temp;
-  //This checks for floor two up and down special cases, it's not pretty, but it works
-  if((realRequest == 4) || (realRequest ==5)){
-    temp = 2;
-  }
+ 
   //if the request is not the floor the elevator is on or moving away from
-  if((realRequest != ed->currentFloor) && (temp != 2) && (realRequest != -1)){
+  if(realRequest != -1){
     //if the current floor is 2
   	if(ed->currentFloor == 2 ) {
 	  // push request to front of queue, regardless of what it is
-      if(realRequest <= 3)
+      if(realRequest == 3) 
         {
-          temp = ed->nextFloor;
-          ed->nextFloor = realRequest;
-          enqueueFloorToFront(ed,temp);
+		  if(ed->nextFloor == 1){
+			  	enqueueFloor(ed, realRequest);
+			}
+		  else {		
+			  temp = ed->nextFloor;
+			  ed->nextFloor = realRequest;
+			  enqueueFloorToFront(ed,temp);
+		  }
+        }
+        if(realRequest == 1) 
+        {
+		  if(ed->nextFloor == 3){
+			  	enqueueFloor(ed, realRequest);
+			}
+		  else {		
+			  temp = ed->nextFloor;
+			  ed->nextFloor = realRequest;
+			  enqueueFloorToFront(ed,temp);
+		  }
         }
       else if (realRequest == 4)
         {
