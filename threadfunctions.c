@@ -100,21 +100,22 @@ void* keyInterruptFunction(void* args){
   str[0] = 'n';
 
   while(1){
-    fgets(str, 50, stdin);
-    printf("%s\n", str);
+    char x;
+    x = getchar();
+    printf("%c\n", x);
     //case statement doesn't like const variables
-    if(str[0] == FLOOR_CHAR_INTERNAL_ONE){
+    if(x == FLOOR_CHAR_INTERNAL_ONE){
       //void floorQueueManager(struct ElevatorData *ed, pthread_mutex_t *mutex, int requestNumber);
       floorQueueManager(ed, mutex, FLOOR_ONE_REQUEST);
     }
-    else if(str[0] == FLOOR_CHAR_INTERNAL_TWO){
+    else if(x == FLOOR_CHAR_INTERNAL_TWO){
       floorQueueManager(ed, mutex, FLOOR_TWO_REQUEST);
     }
-    else if(str[0] == FLOOR_CHAR_INTERNAL_THREE){
+    else if(x == FLOOR_CHAR_INTERNAL_THREE){
       floorQueueManager(ed, mutex, FLOOR_THREE_REQUEST);
     }
 
-    else if(str[0] == FLOOR_CHAR_EXTERNAL_ONE_UP){
+    else if(x == FLOOR_CHAR_EXTERNAL_ONE_UP){
       //if the elevator is on the floor the request was for
       //just open the doors
       if(elevatorIsOnFloor(ed, mutex, 1)){
@@ -127,7 +128,7 @@ void* keyInterruptFunction(void* args){
       }
     }
 
-    else if(str[0] == FLOOR_CHAR_EXTERNAL_TWO_UP){
+    else if(x == FLOOR_CHAR_EXTERNAL_TWO_UP){
       if(elevatorIsOnFloor(ed, mutex, 2)){
         pthread_mutex_lock(mutex);
         openDoorRoutine(ed);
@@ -137,7 +138,7 @@ void* keyInterruptFunction(void* args){
         floorQueueManager(ed, mutex, FLOOR_TWO_UP_REQUEST);
       }
     }
-    else if(str[0] == FLOOR_CHAR_EXTERNAL_TWO_DOWN){
+    else if(x == FLOOR_CHAR_EXTERNAL_TWO_DOWN){
       if(elevatorIsOnFloor(ed, mutex, 2)){
         pthread_mutex_lock(mutex);
         openDoorRoutine(ed);
@@ -148,7 +149,7 @@ void* keyInterruptFunction(void* args){
       }
     }
 
-    else if(str[0] == FLOOR_CHAR_EXTERNAL_THREE_DOWN){
+    else if(x == FLOOR_CHAR_EXTERNAL_THREE_DOWN){
       if(elevatorIsOnFloor(ed, mutex, 3)){
         pthread_mutex_lock(mutex);
         openDoorRoutine(ed);
@@ -160,18 +161,18 @@ void* keyInterruptFunction(void* args){
     }
 
     //----TEST KEYS SHOULD BE TURNED OFF LATER---
-    else if(str[0] == 'y'){
+    else if(x == 'y'){
       //IR Interrupt
       printf("%s\n", "Triggering IR Interrupt");
       irTriggerFunction(ed, mutex);
     }
-    else if(str[0] == 'h'){
+    else if(x == 'h'){
       //floor reach interrupt
       printf("%s\n", "Triggering ReachFloor Interrupt");
       reachFloorTriggerFunction(ed, mutex);
 
     }
-    else if(str[0] == 'n'){
+    else if(x == 'n'){
       //print the full queue
       pthread_mutex_lock(mutex);
       debugBlock(ed);
